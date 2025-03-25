@@ -1,0 +1,80 @@
+<style>
+  .pivot-table {
+    width: 100%;
+    max-width: 500px;
+    margin: 30px auto;
+    border-collapse: collapse;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .pivot-table thead tr {
+    background-color: #007acc;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .pivot-table thead th {
+    padding: 12px;
+    border-right: 1px solid #eee;
+  }
+
+  .pivot-table th,
+  .pivot-table td {
+    padding: 10px 15px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .pivot-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .pivot-table tbody tr:last-child td {
+    border-bottom: 2px solid #007acc;
+  }
+
+  .pivot-table th[rowspan] {
+    background-color: #e6f2fb;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .pivot-table tbody th {
+    background-color: #f2f9ff;
+    color: #333;
+  }
+</style>
+
+<table class="pivot-table">
+  <thead>
+    <tr>
+      <th>Healthy Protein %</th>
+      <th>Healthy Carb %</th>
+      <th>Rating</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="2">False</th>
+      <th>False</th>
+      <td>4.66</td>
+    </tr>
+    <tr>
+      <th>True</th>
+      <td>4.67</td>
+    </tr>
+    <tr>
+      <th rowspan="2">True</th>
+      <th>False</th>
+      <td>4.67</td>
+    </tr>
+    <tr>
+      <th>True</th>
+      <td>4.68</td>
+    </tr>
+  </tbody>
+</table>

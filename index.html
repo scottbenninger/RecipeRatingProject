@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recipe Rating Project</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 40px auto;
+      max-width: 900px;
+      padding: 0 20px;
+      background-color: #fdfdfd;
+      color: #333;
+    }
+    h1, h2, h3, h4 {
+      color: #222;
+    }
+    iframe {
+      display: block;
+      margin: 30px auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    hr {
+      margin: 40px 0;
+      border: none;
+      border-top: 1px solid #ccc;
+    }
+    a {
+      color: #007acc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+    <header style="text-align: center; padding: 60px 20px 40px; background-color: #f9f9f9; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 60px;">
+        <h1 style="font-size: 2.8em; margin-bottom: 12px; color: #333;">
+          Relationship between the Amount of Protein and Carbs and the Rating of a Recipe
+        </h1>
+        <p style="font-size: 1.2em; color: #555;">
+          Final Data Science Project for DSC 80 – Creating and testing a machine learning model to predict recipe ratings
+        </p>
+      </header>
+      
+<h1>Introduction and Question Identification</h1>
+<p>Understanding how a recipe influences customer satisfaction is crucial for any restaurant. In our project, we aim to explore whether it's possible to <strong>predict how good a recipe is</strong> based solely on its contents and categorization.</p>
+<p>More specifically, we investigate how the <strong>Percent Daily Value (PDV)</strong> of <strong>Carbohydrates</strong> and <strong>Protein</strong> impacts a recipe’s user <strong>rating</strong>. This can help restaurants optimize their offerings and also guide home cooks in creating more appealing dishes.</p>
+<p>According to the <a href="https://www.fda.gov/food/nutrition-facts-label/lows-and-highs-percent-daily-value-nutrition-facts-label#:~:text=20%25%20DV%20or%20more%20of,per%20serving%20is%20considered%20high." target="_blank">FDA</a>, a PDV of 20% or more is considered high. We'll use this threshold as a reference point in our analysis to evaluate whether nutrient density (perceived "healthiness") plays a role in how recipes are rated.</p>
+<hr />
+
+<h2>Dataset Overview</h2>
+<p>Our merged dataset contains <strong>17 columns</strong> sourced from recipe and user interaction data:</p>
+<table>
+  <thead>
+    <tr><th>Column</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>name</td><td>Recipe name assigned by creator</td></tr>
+    <tr><td>id</td><td>Unique recipe ID</td></tr>
+    <tr><td>minutes</td><td>Recipe preparation time in minutes</td></tr>
+    <tr><td>contributor_id</td><td>Unique contributor user ID</td></tr>
+    <tr><td>submitted</td><td>Date the recipe was submitted</td></tr>
+    <tr><td>tags</td><td>Food.com tags assigned by the creator</td></tr>
+    <tr><td>nutrition</td><td>Nutrition info: calories and PDV for sodium, protein, carbs, sugar, and saturated fats</td></tr>
+    <tr><td>n_steps</td><td>Number of steps in the recipe</td></tr>
+    <tr><td>steps</td><td>Ordered list of recipe steps</td></tr>
+    <tr><td>description</td><td>User-provided recipe description</td></tr>
+    <tr><td>ingredients</td><td>List of ingredients</td></tr>
+    <tr><td>n_ingredients</td><td>Number of ingredients</td></tr>
+    <tr><td>user_id</td><td>Unique user ID from interactions data</td></tr>
+    <tr><td>recipe_id</td><td>Unique recipe ID from interactions data</td></tr>
+    <tr><td>date</td><td>Date of interaction with the recipe</td></tr>
+    <tr><td>rating</td><td>Given user rating</td></tr>
+    <tr><td>review</td><td>Given user review</td></tr>
+  </tbody>
+</table>
+
+<h2>Key Data Components</h2>
+<p>Among all the columns in our dataset, a few stand out as particularly important:</p>
+<ul>
+  <li><strong>nutrition</strong>: This column holds detailed health-related information for each recipe and is unique for every entry. It includes key nutritional metrics such as calories, sodium, protein, carbohydrates, sugar, and saturated fat — all expressed in Percent Daily Value (PDV).</li>
+  <li><strong>n_steps</strong>: The number of steps in a recipe can serve as a proxy for its complexity, which may influence a user's likelihood of leaving a rating, as well as the rating itself.</li>
+  <li><strong>tags</strong>: These provide useful metadata about the type of food, cooking method, cuisine, or occasion. Analyzing these can reveal trends between recipe types and user preferences.</li>
+</ul>
+
+<hr />
+
+<h2>Data Cleaning and Exploratory Analysis</h2>
+<p>The first goal in our analysis was to clean and prepare the data for further exploration. We started by transforming the merged dataset so that all columns were in the most convenient and usable data types.</p>
+
+<h3>Key Changes</h3>
+<table>
+  <thead>
+    <tr><th>Column</th><th>Transformation</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>nutrition</td><td>Converted from string to list format (exploded elements)</td></tr>
+    <tr><td>tags</td><td>Converted from string to list format</td></tr>
+    <tr><td>Average Rating</td><td>Added as a new numeric column</td></tr>
+    <tr><td>contributor_id</td><td>Converted to consistent ID format</td></tr>
+    <tr><td>submitted</td><td>Converted to datetime object</td></tr>
+  </tbody>
+</table>
+
+<h3>Average Rating Calculation</h3>
+<p><strong>Important adjustments:</strong></p>
+<ol>
+  <li><strong>Merging Datasets:</strong> We performed a left merge between the recipe and interactions dataframes using the <code>id</code> column, matching each unique recipe with its corresponding ratings and reviews.</li>
+  <li><strong>Handling Missing Ratings:</strong> Recipes with a rating of <code>0</code> were treated as missing values (<code>np.nan</code>) since these were not proper ratings but rather passive interactions. Including them would have skewed the results, as valid ratings typically range from 1 to 5.</li>
+  <li><strong>Creating the <code>Average Rating</code> Column:</strong> Ratings were aggregated by <code>recipe_id</code> to calculate the average rating for each recipe, accounting for multiple ratings by different users.</li>
+  <li><strong>Renaming Columns:</strong> After merging, pandas appends <code>_x</code> and <code>_y</code> to duplicate column names. We renamed <code>rating_y</code> to <code>average_rating</code> and <code>rating_x</code> to <code>rating</code> for clarity.</li>
+  <li><strong>Evaluating Stringified Lists:</strong> Both <code>nutrition</code> and <code>tags</code> originally contained strings that represented Python lists. We used <code>eval()</code> to convert these into proper list objects.</li>
+  <li><strong>Splitting the Nutrition Column:</strong> The <code>nutrition</code> list was split into <strong>seven new columns</strong>, each representing a specific nutritional value (e.g., calories, protein, carbs, etc.). This made the nutritional data easier to analyze individually.</li>
+  <li><strong>Datetime Conversion:</strong> The <code>submitted</code> and <code>date</code> columns were converted from object types to proper datetime format (<code>YYYY-MM-DD</code>) using <code>pd.to_datetime()</code>. This facilitates time-based analysis in future steps.</li>
+</ol>
+
+<iframe src="assets/interactive_dataframe_two.html" width="800" height="350"></iframe>
+
+<h2>Univariate Analysis</h2>
+
+<iframe
+  src="assets/figure_univariate.html"
+  width="600"
+  height="400"
+  frameborder="0"
+  style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+></iframe>
+
+<p>In our univariate analysis, we examine the distribution of the <code>rating</code> column. The plot shows a <strong>heavily left-skewed distribution</strong>, with nearly <strong>80% of ratings being a 5</strong>. This suggests strong user satisfaction but also presents a challenge for modeling due to class imbalance — a critical insight for the predictive modeling stage of the project.</p>
+
+<h2>Bivariate Analysis</h2>
+
+<iframe
+  src="assets/figure_bivariate_correct.html"
+  width="600"
+  height="400"
+  frameborder="0"
+  style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+></iframe>
+
+<p>In this bivariate analysis, we explore how <strong>Protein PDV</strong> relates to user ratings. We split recipes into:</p>
+<ul>
+  <li><strong>High Protein</strong>: Protein PDV &gt; 20%</li>
+  <li><strong>Low Protein</strong>: Protein PDV ≤ 20%</li>
+</ul>
+<p>For both groups, the majority of recipes are rated 5, with counts decreasing as ratings decrease. The overall shape of the distributions is similar, suggesting that <strong>protein content alone may not significantly influence rating</strong>, but subtle differences may still be relevant when combined with other features.</p>
+
+<h2>Aggregating Table</h2>
+
+<p>Below is an interactive pivot table showing the mean ratings of recipes categorized by protein and carbohydrate healthiness:</p>
+
+<iframe
+  src="assets/interactive_pivot.html"
+  width="600"
+  height="260"
+  frameborder="0"
+  style="background: #FFFFFF; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+></iframe>
+
+<p>This table displays the average rating for recipes based on whether they have a high or low <strong>Protein PDV</strong> (above or below 20%) and a high or low <strong>Carbs PDV</strong> (above or below 20%).</p>
+
+<p>For example:</p>
+<ul>
+  <li>The top row of the table shows that recipes with both <strong>unhealthy protein and carbs</strong> have an average rating of <strong>4.658</strong>.</li>
+  <li>The bottom row shows that recipes with <strong>healthy protein and carbs</strong> have an average rating of <strong>4.676</strong>.</li>
+</ul>
+
+<p>Though the difference is small, it suggests a slight preference for <strong>"healthier" recipes</strong>, which may help improve the accuracy of our predictive models.</p>
+
+<h2>Assessment of Missingness</h2>
+
+<h3>NMAR Analysis</h3>
+
+<p>We believe that the <code>rating</code> column is likely <strong>Not Missing At Random (NMAR)</strong>. If a user has a neutral experience with a recipe, they may be less motivated to leave a rating. In contrast, people are more likely to leave a rating if they either <strong>really liked</strong> or <strong>really disliked</strong> a recipe.</p>
+
+<p>This behavior aligns with anecdotal experience — users often rate content like games, movies, or restaurants only when their opinion is strong. To support this, we examined all columns and found that the <code>rating</code> column had the <strong>highest proportion of missing values</strong>, by a significant margin.</p>
+
+<h3>Missingness Dependency: <code>rating</code> vs. <code>n_steps</code></h3>
+
+<p>To test whether the missingness in the <code>rating</code> column depends on the number of steps (<code>n_steps</code>) in a recipe, we conducted a <strong>permutation test</strong>.</p>
+
+<ul>
+  <li><strong>Null Hypothesis (H₀)</strong>: The missingness of <code>rating</code> is independent of <code>n_steps</code>.</li>
+  <li><strong>Alternative Hypothesis (H₁)</strong>: The missingness of <code>rating</code> depends on <code>n_steps</code>.</li>
+  <li><strong>Test Statistic</strong>: The absolute difference in the mean number of steps between recipes with missing and non-missing ratings.</li>
+  <li><strong>Significance Level</strong>: α = 0.05</li>
+</ul>
+
+<p>We shuffled the <code>rating</code> column 1,000 times, recalculating the difference in mean <code>n_steps</code> each time. The <strong>observed test statistic</strong> was approximately <strong>1.34</strong>, while the distribution of simulated test statistics mostly ranged between <strong>0 and 0.14</strong>. This resulted in a <strong>p-value of 0.00</strong>.</p>
+
+<p><strong>Conclusion</strong>: We reject the null hypothesis and conclude that the missingness in <code>rating</code> <strong>does depend</strong> on the number of steps in a recipe. This implies that more complex recipes (with more steps) may influence whether or not users choose to leave a rating.</p>
+
+<h3>Missingness Dependency: <code>rating</code> vs. <code>minutes</code></h3>
+
+<p>We are once again examining the missingness of the <code>rating</code> column. Specifically here, we are investigating whether the missingness in <code>rating</code> depends on the <code>minutes</code> column (i.e., the time to complete the recipe).</p>
+
+<ul>
+  <li><strong>Null Hypothesis</strong>: The missingness of <code>rating</code> does not depend on the time to complete the recipe.</li>
+  <li><strong>Alternate Hypothesis</strong>: The missingness of <code>rating</code> does depend on the time to complete the recipe.</li>
+  <li><strong>Test Statistic</strong>: The absolute difference of the mean percent daily value of protein between recipes with and without missing ratings.</li>
+  <li><strong>Significance Level</strong>: 0.05</li>
+</ul>
+
+<iframe
+  src="assets/rating_v_nsteps.html"
+  width="800"
+  height="600"
+  frameborder="0"
+  style="background: #FFFFFF; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+></iframe>
+
+<h3>Missingness Dependency: <code>rating</code> vs. <code>minutes</code></h3>
+
+<p>We performed another standard permutation test, this time shuffling the <code>rating</code> column and recalculating the absolute difference in the mean <code>minutes</code> between groups with and without missing ratings. The <strong>observed test statistic</strong> was approximately <strong>51.45</strong>.</p>
+
+<p>After running 1,000 simulations, the distribution of simulated test statistics mostly ranged between <strong>0 and 0.14</strong>. The resulting <strong>p-value was 0.13</strong>, which is greater than our significance level of 0.05.</p>
+
+<p><strong>Conclusion</strong>: We fail to reject the null hypothesis. This suggests that the missingness in <code>rating</code> does <strong>not</strong> depend on the amount of time it takes to complete the recipe (<code>minutes</code>).</p>
+
+<iframe
+  src="assets/rating_v_minutes.html"
+  width="900"
+  height="600"
+  frameborder="0"
+  style="background: #FFFFFF; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+></iframe>
+
+<h2>Hypothesis Testing</h2>
+
+<p>
+To examine whether protein content influences recipe ratings, we performed a permutation test with the following setup. We chose the difference in means as our test statistic to directly compare average ratings between high-protein and low-protein recipes.
+</p>
+
+<ul>
+  <li><strong>Null Hypothesis</strong>: The amount of protein in a recipe does not affect the rating.</li>
+  <li><strong>Alternate Hypothesis</strong>: Higher protein recipes yield higher ratings.</li>
+  <li><strong>Test Statistic</strong>: Difference in means between ratings of high-protein and low-protein recipes.</li>
+  <li><strong>Significance Level</strong>: 0.05</li>
+</ul>
+
+<p>
+A permutation test was appropriate here since we are evaluating whether two observed distributions (ratings of high- vs. low-protein recipes) could plausibly come from the same population, without relying on population-level assumptions.
+</p>
+
+<p>
+The <strong>observed test statistic</strong> was approximately <strong>-0.0203</strong>. The <strong>p-value</strong> was <strong>0.04</strong>, which is below the 0.05 significance level. Therefore, we <strong>reject the null hypothesis</strong>.
+</p>
+
+<p>
+This result suggests that protein content does impact ratings—specifically, that higher-protein recipes may receive higher ratings. This could reflect a perception among users that high-protein meals are healthier or more desirable.
+</p>
+
+<h3>Hypothesis Test</h3>
+<iframe
+  src="assets/hypothesis.html"
+  width="900"
+  height="600"
+  frameborder="0"
+  style="background: #FFFFFF; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
+></iframe>
+
+<h3>Framing a Prediction Problem</h3>
+<p>
+  Our prediction problem involves predicting the ratings of recipes based on their nutritional content and other tags, making it a classification problem. Specifically, we are performing multiclass classification because the ratings are discrete values that fall into multiple categories (e.g., 1, 2, 3, 4, 5).
+</p>
+<p>
+  The response variable we are predicting is the rating, since the dataset centers around the ratings of each recipe. Understanding what influences these ratings can provide valuable insights for recipe improvement and personalization.
+</p>
+<p>
+  We chose the F1-score as our evaluation metric because it balances both precision and recall, providing a more comprehensive measure of model performance—especially when the data is imbalanced. Accuracy alone can be misleading when certain ratings are more frequent, which we observed earlier: 5s are far more common than any other rating. The F1-score helps ensure that our model performs well across all rating categories.
+</p>
+<p>
+  Additionally, our predictive model is based solely on columns within the rating dataset. This ensures we’re not using future information or unavailable data at prediction time, which maintains the model’s validity and integrity.
+</p>
+
+<h3>Baseline Model</h3>
+<p>
+  For our baseline model, we began by splitting the data into features and target, then splitting it further into training and testing sets. We used a simple classifier to predict recipe ratings.
+</p>
+<p>
+  The features in our model came from binarizing a discrete variable (number of steps) and two continuous variables (protein and carb PDV). After binarization, all these features were nominal since they represent categorical data with no inherent ordering.
+</p>
+<p>
+  Our F1-score was 0.67. However, we noticed that the model predicted a 5 for every recipe, likely due to the class imbalance—about 80% of all ratings were 5s. Predicting only 5s maximized accuracy but failed to generalize. We also observed that the mean of our model’s predictions was exactly 5, confirming this behavior.
+</p>
+
+<h3>Final Model</h3>
+<p>
+  To improve our model, we wrote a loop to iterate through the tags column and calculate the average rating for each unique tag. We observed that lower-rated recipes often contained tags like "cookie", "brownie", or "cake". Based on this, we created a new binary feature called <code>is_a_treat</code>, which marked recipes with these tags.
+</p>
+<p>
+  We also attempted to rebalance the dataset by removing 25% of recipes rated 5, hoping to discourage the model from always predicting that value. Unfortunately, this reduced performance—our F1-score dropped. Retaining only the <code>is_a_treat</code> binary column yielded better results.
+</p>
+<p>
+  Finally, we used a <code>RandomForestClassifier</code> and performed <code>GridSearchCV</code> to tune the hyperparameters <code>max_depth</code> and <code>n_estimators</code>. After several iterations, we found the optimal values (not specified here).
+</p>
+<p>
+  Our final F1-score remained at 0.67. While this shows minimal improvement over the baseline, the model benefitted slightly from hyperparameter tuning. We had hoped that incorporating <code>is_a_treat</code> and rebalancing the dataset would improve performance, but the impact was modest.
+</p>
+
+<section style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333;">
+    <h2 style="margin-top: 40px; font-size: 28px;">Fairness Analysis</h2>
+  
+    <p>
+      For our fairness analysis, we wanted to examine whether the model performs equally well across different types of recipes. Specifically, we investigated whether the model's error is significantly different for recipes labeled as treats—those that include tags like <em>cookie</em>, <em>cake</em>, or <em>brownie</em>—compared to recipes that do not include these tags.
+    </p>
+  
+    <h3 style="margin-top: 24px;">Group Definitions</h3>
+    <ul>
+      <li><strong>Group X:</strong> Recipes tagged as treats (<code>is_a_treat == 1</code>)</li>
+      <li><strong>Group Y:</strong> Recipes not tagged as treats (<code>is_a_treat == 0</code>)</li>
+    </ul>
+  
+    <h3 style="margin-top: 24px;">Evaluation Metric</h3>
+    <p>
+      <strong>Metric:</strong> Root Mean Squared Error (RMSE) <br>
+      <strong>Why:</strong> RMSE is appropriate for measuring the average magnitude of prediction errors in a regression context, such as predicting recipe ratings.
+    </p>
+  
+    <h3 style="margin-top: 24px;">Statistical Hypotheses</h3>
+    <ul>
+      <li><strong>Null Hypothesis (H₀):</strong> There is no difference in RMSE between Group X and Group Y.</li>
+      <li><strong>Alternative Hypothesis (H₁):</strong> The RMSE is higher for treat-tagged recipes (Group X), indicating worse model performance.</li>
+    </ul>
+  
+    <h3 style="margin-top: 24px;">Test Details</h3>
+    <p>
+      <strong>Test Statistic:</strong> Difference in RMSE between Group X and Group Y <br>
+      <strong>Significance Level (α):</strong> 0.05
+    </p>
+  
+    <h3 style="margin-top: 24px;">Results</h3>
+    <p>
+      We conducted a permutation test with 10,000 permutations. The resulting <strong>p-value is 0.86</strong>.
+    </p>
+  
+    <h3 style="margin-top: 24px;">Conclusion</h3>
+    <p>
+      Since the p-value (0.86) is greater than the significance level (0.05), we <strong>fail to reject the null hypothesis</strong>. This indicates that the model does not perform significantly worse on treat-tagged recipes compared to non-treats.
+    </p>
+  
+    <h3 style="margin-top: 36px;">Permutation Test: Fairness Visualization</h3>
+    <iframe
+      src="assets/fairness_plot.html"
+      width="800"
+      height="600"
+      frameborder="0"
+      style="background: #FFFFFF; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"
+    ></iframe>
+  </section>
+  
+
+
+<hr />
+
+
+
+
+
+
+
+
+
+<!-- Continue with other sections like Univariate Analysis, Hypothesis Testing, etc. -->
+
+</body>
+</html>
